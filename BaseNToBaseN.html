@@ -1,0 +1,204 @@
+﻿<!DOCTYPE html>
+<html lang="en-us" dir="ltr">
+<head>
+    <style>
+        .f {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+    </style>
+    <script>
+        const D1 = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ !#$%&()*+,-./:;<=>?@[]^_`{|}~";
+        const D2 = "¡¢£¤¥¦§¨©ª«¬­®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿĀāĂăĄąĆćĊċČčĎďĐđĒēĖėĘęĚěĞğĠġĢģĨĩĪīĮįİıĶķĸĹĺĻļĽľŁłŃńŅņŇňŊŋŌōŐőŒœŔŕŖŗŘřŚśŞşŠšŢţŤťŦŧŨũŪūŮůŰűŲųŴŵŶŷŸŹźŻżŽžƒƠơƯưȘșȚțˆˇ˘˙˚˛˜˝ͺ΄΅ΆΈΉΊΌΎΏΐΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩΪΫάέήίΰαβγδεζηθικλμνξοπρςστυφχψωϊϋόύώЁЂЃЄЅІЇЈЉЊЋЌЎЏАБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдежзийклмнопрстуфхцчшщъыьэюяёђѓєѕіїјљњћќўџҐґְֱֲֳִֵֶַָֹֺֻּֽ־ֿ׀ׁׂ׃אבגדהוזחטיךכלםמןנסעףפץצקרשתװױײ׳״،؛؟ءآأؤإئابةتثجحخدذرزسشصضطظعغـفقكلمنهوىيٹپچڈڑژکگںھہ";
+        function bytes() {
+            let encoder = new TextEncoder();
+            let a = [];
+            for (let i = 0; i < DIGITS.length; i++) {
+                let x = encoder.encode(DIGITS[i]);
+                a.push({ c: DIGITS[i], x: Array.from(x) });
+            }
+            a.sort((a, b) => {
+                if (a.x.length === b.x.length) {
+                    for (let i = 0; i < a.x.length; i++) {
+                        if (a.x[i] !== b.x[i]) {
+                            return a.x[i] < b.x[i] ? -1 : 1;
+                        }
+                    }
+                }
+                return a.x.length < b.x.length ? -1 : 1;
+            });
+            console.log(a);
+
+            console.log(a.filter(q => q.x.length === 1).map(q => q.c).join(''));
+            console.log(a.filter(q => q.x.length === 2).map(q => q.c).join(''));
+            console.log(a.filter(q => q.x.length === 3).map(q => q.c).join(''));
+        }
+        //bytes();
+
+        function generator() {
+            let decoder = new TextDecoder("utf-8", { fatal: true });
+            let d1 = '', d2 = '', d3 = '';
+            for (let i = 0; i < 256; i++) {
+                try {
+                    let x = decoder.decode(new Uint8Array([i]));
+                    d1 += x;
+                    d1 = removeDuplicateCharacters(DIGITS);
+                } catch (e) {
+
+                }
+            }
+            for (let i = 0; i < 256; i++) {
+                for (let j = 0; j < 256; j++) {
+                    try {
+                        let x = decoder.decode(new Uint8Array([i, j]));
+                        d2 += x;
+                        d2 = removeDuplicateCharacters(DIGITS);
+                    } catch (e) {
+                    }
+                }
+            }
+            console.log(d1);
+            console.log(d2);
+        }
+        //generator();
+
+        function convertBase(str, fromBase, toBase) {
+            let chars = D1 + D2;
+            const add = (x, y, base) => {
+                let z = [];
+                const n = Math.max(x.length, y.length);
+                let carry = 0;
+                let i = 0;
+                while (i < n || carry) {
+                    const xi = i < x.length ? x[i] : 0;
+                    const yi = i < y.length ? y[i] : 0;
+                    const zi = carry + xi + yi;
+                    z.push(zi % base);
+                    carry = Math.floor(zi / base);
+                    i++;
+                }
+                return z;
+            }
+
+            const multiplyByNumber = (num, x, base) => {
+                if (num < 0) return null;
+                if (num == 0) return [];
+
+                let result = [];
+                let power = x;
+                while (true) {
+                    num & 1 && (result = add(result, power, base));
+                    num = num >> 1;
+                    if (num === 0) break;
+                    power = add(power, power, base);
+                }
+
+                return result;
+            }
+
+            const parseToDigitsArray = (str, base) => {
+                const digits = str.split('');
+                let arr = [];
+                for (let i = digits.length - 1; i >= 0; i--) {
+                    const n = chars.indexOf(digits[i])
+                    if (n == -1) return null;
+                    arr.push(n);
+                }
+                return arr;
+            }
+
+            const digits = parseToDigitsArray(str, fromBase);
+            if (digits === null) return null;
+
+            let outArray = [];
+            let power = [1];
+            for (let i = 0; i < digits.length; i++) {
+                digits[i] && (outArray = add(outArray, multiplyByNumber(digits[i], power, toBase), toBase));
+                power = multiplyByNumber(fromBase, power, toBase);
+            }
+
+            let out = '';
+            for (let i = outArray.length - 1; i >= 0; i--)
+                out += chars[outArray[i]];
+
+            return out;
+        }
+
+        function removeDuplicateCharacters(string) {
+            return [...new Set(string.split(''))].join('');
+        }
+
+        function c() {
+            let f = document.getElementById('i').value;
+            let r = convertBase(f, document.getElementById('f').value, document.getElementById('t').value);
+            document.getElementById('r').innerText = r;
+
+            document.getElementById('fl').innerText = f.length;
+            document.getElementById('rl').innerText = r.length;
+            document.getElementById('rr').innerText = ((f.length - r.length) / f.length * 100).toFixed(2);
+
+            let encoder = new TextEncoder();
+            let flb = encoder.encode(f).length;
+            let rlb = encoder.encode(r).length;
+            document.getElementById('flb').innerText = flb;
+            document.getElementById('rlb').innerText = rlb;
+            document.getElementById('rrb').innerText = ((flb - rlb) / flb * 100).toFixed(2);
+        }
+    </script>
+</head>
+<body>
+    <div class="f">
+        <label>
+            <b>Input:</b>
+            <input id="i" onchange="c();" value="0" />
+        </label>
+        <label>
+            <b>From Base:</b>
+            <input type="number" min="2" id="f" onchange="c();" value="10" />
+        </label>
+        <label>
+            <b>To Base:</b>
+            <input type="number" min="2" id="t" onchange="c();" />
+        </label>
+        <label>
+            <b>Result:</b>
+            <span id="r">
+                10
+            </span>
+        </label>
+        <label>
+            <b>From Length:</b>
+            <span id="fl">
+                0
+            </span>
+            (<span id="flb">
+                0
+            </span> Bytes)
+        </label>
+        <label>
+            <b>Result Length:</b>
+            <span id="rl">
+                0
+            </span>
+            (<span id="rlb">
+                0
+            </span> Bytes)
+        </label>
+        <label>
+            <b>Reduction:</b>
+            %<span id="rr">
+                0
+            </span>
+            (%<span id="rrb">
+                0
+            </span> Bytes)
+        </label>
+    </div>
+    <script>
+        document.getElementById('f').setAttribute('max', D1.length + D2.length);
+        document.getElementById('t').setAttribute('max', D1.length + D2.length);
+        document.getElementById('t').value = D1.length + D2.length;
+    </script>
+</body>
+</html>
